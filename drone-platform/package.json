@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:native": "cargo test --workspace",
     "check:environment": "node scripts/check_desktop_environment.mjs",
-    "check:foundation": "node scripts/check_foundation.mjs"
+    "check:foundation": "node scripts/check_foundation.mjs",
+    "check:launch": "node scripts/check_launch.mjs"
   },
   "devDependencies": {
     "vitest": "^4.1.11"

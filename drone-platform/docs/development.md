@@ -13,8 +13,18 @@ npm run check:environment
 npm run check:foundation
 npm run test:native
 npm run desktop:build
+npm run check:launch
 npm run desktop:dev
 ```
+
+`npm run check:launch` is the Phase 0 native launch gate. It starts the built binary twice
+against a throwaway data directory, then asserts what a completed startup must leave behind:
+the schema at its current version, migrations applied once rather than repeated on restart,
+safety latched to `DISCONNECTED`, one audited `application_start` per run, and a retained
+session log per run. It reports `BLOCKED` when no binary has been built, records a failure
+rather than crashing when startup produces nothing, and is the only check that may set
+`desktop_launch_passed`. It does not drive the user interface, so operator-driven project
+creation still needs manual confirmation, and it makes no hardware or simulation claim.
 
 `npm run test:native` builds the desktop feature and therefore needs the platform's GUI toolchain. Where that is unavailable, `cargo test --workspace --no-default-features` runs the same storage, migration and safety suite without the window layer; `npm run check:foundation` records both and marks the shell `BLOCKED` rather than passing. A blocked shell is never Phase 0 evidence.
 

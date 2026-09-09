@@ -2,7 +2,7 @@
 
 DroneLab is an engineering desktop application around existing flight-control firmware. Its architecture separates Betaflight over MSP, PX4 over MAVLink, and an independent simulation engine backed by Gazebo and the X500 model. Shared project, telemetry, diagnostics, test, Blackbox, and report contracts sit above those integrations.
 
-The current work is **Phase 0: architecture and foundation**. The desktop source includes a React/TypeScript shell, Tauri/Rust backend, versioned SQLite storage, project model, explicit adapter capabilities, and safety states. A successful browser build does not prove a native desktop launch. Hardware communication, configuration writes, flashing, motors, and real flight remain unavailable.
+The current work is **Phase 0: architecture and foundation**. The desktop source includes a React/TypeScript shell, Tauri/Rust backend, versioned SQLite storage, project model, explicit adapter capabilities, and safety states. On the current Ubuntu 22.04 development host the native release build compiles and `npm run check:launch` has verified two real launches of that binary: storage is provisioned then reopened, migrations apply once, safety latches to DISCONNECTED, and each run is audited and logged. A human has not yet confirmed project creation through the running window, so Phase 0 is not yet marked complete. Hardware communication, configuration writes, flashing, motors, and real flight remain unavailable.
 
 ```text
                        DroneLab Desktop

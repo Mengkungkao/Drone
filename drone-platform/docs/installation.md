@@ -60,7 +60,7 @@ sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev \
   libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev build-essential
 ```
 
-These package names follow [Tauri's Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux). Ubuntu 24.04 and later use the same set. Re-run `npm run check:environment` afterwards and confirm `nativeToolchainPresent` is `true` before attempting `npm run desktop:build`.
+These package names follow [Tauri's Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux). Ubuntu 24.04 and later use the same set. Re-run `npm run check:environment` afterwards and confirm `nativeToolchainPresent` is `true` before attempting `npm run desktop:build`, then `npm run check:launch` to record the native launch evidence Phase 0 requires.
 
 Until the libraries are present, `npm run check:foundation` still runs the native suite through `cargo test --workspace --no-default-features`, which exercises storage, migrations and safety without the window layer. It reports the desktop shell as `BLOCKED` and exits non-zero, because Phase 0 requires a verified native launch that this host cannot yet produce.
 
