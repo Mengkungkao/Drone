@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<package format="3"><name>drone_bringup</name><version>0.1.0</version><description>Phase 1 bringup</description><maintainer email="dev@localhost">Drone Platform</maintainer><license>Apache-2.0</license><buildtool_depend>ament_cmake</buildtool_depend><exec_depend>drone_monitor</exec_depend></package>

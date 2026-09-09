@@ -1,0 +1,13 @@
+{
+  "environment_checked": true,
+  "environment_ready": false,
+  "px4_source_ready": false,
+  "px4_build_passed": false,
+  "gazebo_passed": false,
+  "ros2_build_passed": false,
+  "dds_passed": false,
+  "telemetry_passed": false,
+  "flight_test_passed": false,
+  "phase1_complete": false
+}
+

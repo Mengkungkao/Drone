@@ -1,0 +1,16 @@
+# Upstream lookup was attempted on 2026-09-08 but outbound GitHub access returned
+# HTTP 403. Values remain deliberately unverified rather than fabricated.
+px4:
+  version: unverified
+  commit: unverified
+ros2:
+  distribution: jazzy
+gazebo:
+  distribution: harmonic
+px4_msgs:
+  version: unverified
+mavsdk:
+  version: unverified
+micro_xrce_dds_agent:
+  version: unverified
+

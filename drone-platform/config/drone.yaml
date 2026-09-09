@@ -1,0 +1,12 @@
+vehicle:
+  name: development_x500
+  type: quadrotor
+  frame: x
+  simulator_model: gz_x500
+px4:
+  mode: sitl
+ros2:
+  enabled: true
+safety:
+  real_hardware_enabled: false
+

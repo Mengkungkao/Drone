@@ -1,0 +1,11 @@
+simulation:
+  world: default
+  headless: auto
+mission:
+  target_altitude_m: 5.0
+  hover_seconds: 10
+  altitude_tolerance_m: 0.5
+  max_horizontal_drift_m: 1.0
+  telemetry_timeout_s: 30
+  mission_timeout_s: 240
+
