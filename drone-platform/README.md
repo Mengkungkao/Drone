@@ -1,52 +1,37 @@
-# Drone Development Platform — Phase 1
+# DroneLab
 
-This repository provides a **simulation-only** PX4 X500 development platform for **Ubuntu 22.04 LTS (Jammy), x86-64, and ROS 2 Humble**. Phase 1 orchestrates PX4 SITL and Gazebo Harmonic, transports real PX4 telemetry through Micro XRCE-DDS into ROS 2 Humble, and uses MAVSDK to execute an evidence-gated 5 m takeoff, 10 s hover, landing, and disarm mission.
+DroneLab is an engineering desktop application around existing flight-control firmware. Its architecture separates Betaflight over MSP, PX4 over MAVLink, and an independent simulation engine backed by Gazebo and the X500 model. Shared project, telemetry, diagnostics, test, Blackbox, and report contracts sit above those integrations.
 
-> **Safety:** real hardware, serial devices, firmware flashing, HITL/HIL, motors, and remote control are disabled. The flight client accepts only the local listen-only `udp://:14540` simulation endpoint.
+The current work is **Phase 0: architecture and foundation**. The desktop source includes a React/TypeScript shell, Tauri/Rust backend, versioned SQLite storage, project model, explicit adapter capabilities, and safety states. A successful browser build does not prove a native desktop launch. Hardware communication, configuration writes, flashing, motors, and real flight remain unavailable.
 
-## Architecture
-
-`Gazebo Harmonic X500 ↔ PX4 SITL → uXRCE-DDS client → Micro XRCE-DDS Agent → ROS 2 → drone_monitor`
-
-MAVSDK independently connects to PX4's simulated UDP endpoint for high-level actions. It does not replace or fake the ROS telemetry path. See [the architecture document](docs/architecture.md).
-
-## Requirements
-
-Ubuntu 22.04 x86-64, at least 8 GiB RAM and 20 GiB free space, outbound access to the Ubuntu, ROS, OSRF, GitHub, and Python package repositories, and a regular user with `sudo` access for system installation. A display is optional; startup defaults to headless operation.
-
-Gazebo Harmonic is retained for PX4's `gz_x500` simulator. Humble uses the OSRF `ros-humble-ros-gzharmonic` packages for this pairing; its default `ros-humble-ros-gz` packages target Fortress and conflict with them. See [installation and compatibility](docs/installation.md).
-
-## Install and build
-
-```bash
-cd drone-platform
-./scripts/setup.sh
-./scripts/build.sh
-./scripts/check_environment.sh
+```text
+                       DroneLab Desktop
+                              |
+               Application / domain services
+                 /            |             \
+         BetaflightAdapter  PX4Adapter  SimulationEngine
+                 |            |             |
+                MSP        MAVLink        Gazebo
+                 |            |             |
+             Verified FC  PX4 FC / SITL     X500
+                 \            |             /
+                 Telemetry / diagnostics / testing
+                       Blackbox / reports
 ```
 
-Run setup as your regular user; it invokes `sudo` for system changes. It selects a released PX4 tag, obtains the matching `px4_msgs` `release/x.y` branch, builds Micro XRCE-DDS Agent v2.4.2, and records resolved versions in `config/versions.yaml`. Existing source checkouts are checked for mismatches and retained. See [installation](docs/installation.md) before reusing a workspace previously built with Jazzy.
-
-## Operate and test
+From this directory:
 
 ```bash
-./scripts/start_sitl.sh       # launch and prove real DDS telemetry
-source /opt/ros/humble/setup.bash
-source ros2_ws/install/setup.bash
-ros2 run drone_monitor monitor
-./scripts/test_phase1.sh      # autonomous measured mission
-./scripts/stop.sh             # stop only recorded process groups
+npm install
+npm run check:environment
+npm run check:foundation
+npm run dev
 ```
 
-Each startup creates `logs/YYYY-MM-DD_HHMMSS/`. The flight test continuously writes NED position and `altitude_m=-z` to `altitude.csv`, plus machine-readable metrics and checks to `evidence.json`. Existing runs are never overwritten.
+With the native prerequisites installed, use `npm run desktop:dev` to launch Tauri, `npm run desktop:build` to build it, and `npm run test:native` for Rust tests. See [installation](docs/installation.md) and [development](docs/development.md). Browser preview has no native hardware or SQLite access.
 
-## PASS / FAIL
+The previous PX4-only project is retained as a **future Phase 2 subsystem** in `scripts/`, `ros2_ws/`, and `simulation/`. It now targets Ubuntu 24.04, ROS 2 Jazzy, and Gazebo Harmonic. `scripts/test_px4_sitl.sh` is the explicit mission entry point; the old `test_phase1.sh` forwards to the same gates. It is not the Betaflight Phase 1 test. No simulator, DDS, telemetry, or flight PASS is claimed.
 
-PASS requires real connection and preflight health, target altitude 5.0 ±0.5 m within 30 s, at least 10 s of hover wholly inside that band, less than 1 m horizontal drift, landing at or below 0.3 m, disarm, and a mission under 240 s. Any missing sample or failed criterion returns non-zero; action success alone cannot produce PASS. `.state/phase1.json` changes to complete only after those measured checks pass.
+`.state/project.json` tracks DroneLab milestones. `.state/phase1.json` is retained historical state from the earlier PX4 project and cannot establish a DroneLab milestone. Unit fixtures are isolated from production evidence.
 
-## Limitations and roadmap
-
-Phase 1 has no real-hardware path, perception, planning, UI, waypoint mission, or HITL/HIL support. A future Phase 2 can add a separately reviewed hardware controller behind the existing C++ interface, but must not weaken the default simulation interlocks. See [troubleshooting](docs/troubleshooting.md) for current operational constraints.
-
-The Humble configuration has not yet been built or flown on the target Ubuntu system. The current editing host is Windows without an available WSL Ubuntu environment. Runtime readiness and Phase 1 completion remain unverified; no flight PASS is claimed.
-
+Documentation: [architecture](docs/architecture.md), [safety](docs/safety.md), [Betaflight](docs/betaflight.md), [PX4](docs/px4.md), [simulation](docs/simulation.md), [roadmap](docs/roadmap.md), [troubleshooting](docs/troubleshooting.md).

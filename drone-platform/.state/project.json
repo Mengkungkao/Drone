@@ -1,0 +1,31 @@
+{
+  "product": "DroneLab",
+  "phase": 0,
+  "phase0_complete": false,
+  "phase1_complete": false,
+  "environment_ready": false,
+  "frontend_build_passed": false,
+  "desktop_build_passed": false,
+  "desktop_launch_passed": false,
+  "native_tests_passed": false,
+  "betaflight_adapter_ready": false,
+  "betaflight_detection_passed": false,
+  "px4_adapter_ready": false,
+  "px4_sitl_passed": false,
+  "gazebo_passed": false,
+  "ros2_passed": false,
+  "simulation_flight_test_passed": false,
+  "configuration_passed": false,
+  "firmware_manager_passed": false,
+  "diagnostics_passed": false,
+  "blackbox_passed": false,
+  "hitl_passed": false,
+  "bench_test_passed": false,
+  "real_flight_module_ready": false,
+  "blockers": [
+    "Rust/Cargo and Microsoft C++ build tools are not installed on this Windows host.",
+    "No verified Betaflight controller has been supplied; no device communication attempted.",
+    "WSL, Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic and PX4 SITL are unavailable on this host."
+  ],
+  "evidence": []
+}

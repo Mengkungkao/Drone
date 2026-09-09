@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Local project storage and application safety state. No hardware, shell, network or arbitrary filesystem commands.",
+  "windows": ["main"],
+  "permissions": [
+    "allow-get-workspace",
+    "allow-create-project",
+    "allow-select-project",
+    "allow-save-snapshot",
+    "allow-list-snapshots",
+    "allow-set-safety-state"
+  ]
+}
+

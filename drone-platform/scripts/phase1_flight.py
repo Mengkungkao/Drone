@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
+"""Legacy PX4 mission retained for Phase 2; never a Betaflight Phase 1 test."""
 import argparse, asyncio, csv, json, math, pathlib, time
 from evidence import analyze
+from phase_gate import require_px4_phase
 
 async def first(stream, timeout): return await asyncio.wait_for(anext(stream), timeout)
 
 async def collect_telemetry(drone, state, started, samples):
     position_stream = drone.telemetry.position_velocity_ned()
     armed_stream = drone.telemetry.armed()
-    armed = False
+    # No sample is not evidence that the aircraft is disarmed.
+    armed = None
     pending_armed = None
     try:
         async for pv in position_stream:
@@ -24,7 +27,7 @@ async def collect_telemetry(drone, state, started, samples):
                 pending_armed = None
             p, v = pv.position, pv.velocity
             elapsed = time.monotonic() - started
-            samples.append({'timestamp':time.time(),'elapsed_s':f'{elapsed:.3f}','x':p.north_m,'y':p.east_m,'z':p.down_m,'altitude_m':-p.down_m,'velocity_x':v.north_m_s,'velocity_y':v.east_m_s,'velocity_z':v.down_m_s,'armed':str(armed).lower(),'flight_state':state['name']})
+            samples.append({'timestamp':time.time(),'elapsed_s':f'{elapsed:.3f}','x':p.north_m,'y':p.east_m,'z':p.down_m,'altitude_m':-p.down_m,'velocity_x':v.north_m_s,'velocity_y':v.east_m_s,'velocity_z':v.down_m_s,'armed':'unknown' if armed is None else str(armed).lower(),'flight_state':state['name']})
     finally:
         if pending_armed is not None:
             pending_armed.cancel()
@@ -36,6 +39,9 @@ async def collect_telemetry(drone, state, started, samples):
         await position_stream.aclose()
 
 async def mission(run, config, safety):
+    require_px4_phase(pathlib.Path(__file__).resolve().parents[1] / '.state/project.json')
+    if safety.get('px4_runtime_enabled') is not True:
+        raise RuntimeError('PX4 runtime is disabled pending Phase 2 network/vehicle identity verification')
     if not safety.get('simulation_only') or safety.get('real_hardware_enabled') or safety.get('allow_serial_devices'): raise RuntimeError('simulation safety interlock rejected configuration')
     url=safety['connection_url']
     if not url.startswith('udp://:'): raise RuntimeError('only a local listen-only UDP simulation URL is permitted')

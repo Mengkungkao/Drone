@@ -1,0 +1,37 @@
+import type { Page } from '../types';
+import { Icon } from '../icons';
+import { Panel, Tag } from './common';
+
+export function pageDescription(page: Page) {
+  const descriptions: Record<Page, string> = {
+    Dashboard: '', Drone: 'Physical drones and simulated vehicles, with their own configuration history.',
+    Connect: 'A common interface to Betaflight, PX4, and independent simulation engines.',
+    Configure: 'Capture local configuration snapshots and inspect changes between revisions.',
+    Simulation: 'An independent simulation path, designed around PX4 SITL and Gazebo.',
+    Tests: 'Repeatable validation across simulated and physical systems.',
+    Firmware: 'Firmware development and deployment through verified adapters.',
+    Diagnostics: 'Inspect workspace activity, safety state, and system availability.',
+    PID: 'A future workspace for evidence-based flight-controller tuning.',
+    Blackbox: 'A future analysis workspace for recorded flight data.',
+    'Flight Test': 'A deliberate transition from the bench to physical flight.',
+    Reports: 'Engineering records grounded in actual test evidence.',
+    Settings: 'Runtime details, local persistence, and application boundaries.',
+  }; return descriptions[page];
+}
+
+const capabilityDetails: Partial<Record<Page, { icon: string; heading: string; description: string; steps: { title: string; detail: string }[]; next: Page }>> = {
+  Simulation: { icon: 'simulation', heading: 'PX4 → Gazebo → X500', description: 'The simulation engine has its own interface, separate from flight-controller adapters. The repository’s Linux simulation scripts remain available; launch and process control are not integrated into this desktop release.', steps: [{ title: 'Simulation engine', detail: 'Independent lifecycle and capability contract' }, { title: 'PX4 SITL + Gazebo Harmonic', detail: 'Runtime discovery and supervised launch planned' }, { title: 'X500 vehicle', detail: 'Telemetry and test capture require a running, verified session' }], next: 'Connect' },
+  Tests: { icon: 'tests', heading: 'Validation needs real evidence.', description: 'The desktop test runner is not implemented. No simulation, bench, or flight test results have been recorded by this application.', steps: [{ title: 'Simulation tests', detail: 'Future automated scenarios against a verified simulator' }, { title: 'Bench tests', detail: 'Require hardware verification and an operator safety checklist' }, { title: 'Result artifacts', detail: 'Future traceable measurements, logs, and acceptance criteria' }], next: 'Diagnostics' },
+  Firmware: { icon: 'firmware', heading: 'Existing firmware. A common workspace.', description: 'DroneLab is built around Betaflight and PX4. Firmware builds, device identification, backup, flashing, and recovery are not integrated in this release.', steps: [{ title: 'Identify & back up', detail: 'Verify controller identity and preserve its configuration' }, { title: 'Build & review', detail: 'Record the exact firmware artifact and target compatibility' }, { title: 'Explicit deployment', detail: 'A future operator-approved workflow; flashing remains disabled' }], next: 'Connect' },
+  PID: { icon: 'pid', heading: 'Tune from measured behavior.', description: 'PID analysis and tuning are planned. A verified adapter and recorded flight or simulation data are required before firmware-specific tuning can be offered.', steps: [{ title: 'Acquire', detail: 'Import supported logs or capture verified telemetry' }, { title: 'Analyze', detail: 'Inspect response, noise, and axis-specific behavior' }, { title: 'Compare', detail: 'Track tuning changes with configuration snapshots' }], next: 'Configure' },
+  Blackbox: { icon: 'blackbox', heading: 'A record of what really happened.', description: 'Blackbox and flight-log importers are not implemented. This workspace does not display sample traces or fabricated flight data.', steps: [{ title: 'Firmware-aware import', detail: 'Future Betaflight Blackbox and PX4 ULog adapters' }, { title: 'Time-aligned analysis', detail: 'Future traces for sensors, setpoints, and actuator output' }, { title: 'Simulation comparison', detail: 'Future comparison of recorded simulation and physical-flight data' }], next: 'Diagnostics' },
+  'Flight Test': { icon: 'flight', heading: 'Flight begins with verified readiness.', description: 'Real-flight operations are disabled. The local E-stop lock only blocks application commands; it cannot stop motors or replace a physical emergency procedure.', steps: [{ title: 'Verified hardware', detail: 'Correct controller, firmware, project, and battery state' }, { title: 'Operator checklist', detail: 'Clear test area, safe bench setup, and emergency procedure' }, { title: 'Explicit flight authorization', detail: 'Future state-gated operations with recorded operator confirmation' }], next: 'Diagnostics' },
+  Reports: { icon: 'reports', heading: 'Every conclusion needs a source.', description: 'Report generation is planned. Project snapshots and workspace events are the records available in this release; no flight-performance or test-pass claims are generated.', steps: [{ title: 'Project provenance', detail: 'Project identity and local configuration history' }, { title: 'Measured results', detail: 'Future links to recorded logs and test artifacts' }, { title: 'Exportable reports', detail: 'Future evidence-backed engineering summaries' }], next: 'Diagnostics' },
+};
+export function CapabilityView({ page, onNavigate }: { page: Page; onNavigate: (page: Page) => void }) {
+  const detail = capabilityDetails[page]; if (!detail) return null;
+  return <><section className="capability-hero"><div className="capability-heading"><span className="capability-symbol"><Icon name={detail.icon} size={36} /></span><Tag tone="pending">PLANNED CAPABILITY</Tag></div><h2>{detail.heading}</h2><p>{detail.description}</p><button className="button secondary" onClick={() => onNavigate(detail.next)}>Open {detail.next.toLowerCase()}<Icon name="arrow" size={16} /></button></section><div className="capability-steps">{detail.steps.map((step, index) => <article key={step.title}><span className="step-index">0{index + 1}</span><h3>{step.title}</h3><p>{step.detail}</p><span className="mono step-status">NOT INTEGRATED</span></article>)}</div></>;
+}
+export function SettingsView({ native }: { native: boolean }) {
+  return <div className="settings-grid"><Panel title="Application" eyebrow="RUNTIME"><dl className="detail-grid single"><div><dt>VERSION</dt><dd>DroneLab 0.1.0 · Foundation</dd></div><div><dt>RUNTIME</dt><dd>{native ? 'Tauri desktop' : 'Browser preview — native backend unavailable'}</dd></div><div><dt>PROJECT STORAGE</dt><dd>{native ? 'SQLite in the application data directory' : 'Unavailable in browser preview'}</dd></div><div><dt>NETWORK</dt><dd>No public remote-control service</dd></div></dl></Panel><Panel title="Release boundaries" eyebrow="PHASE 00"><div className="settings-notes"><h3>Available in the desktop app</h3><p>Create and select projects, persist local configuration snapshots, compare revisions, inspect the workspace audit log, and engage the local command lock.</p><h3>Future integrations</h3><p>Hardware transport, simulator launch, live telemetry, firmware flashing, log parsing, test execution, and report generation.</p><div className="quiet-note"><Icon name="shield" size={18} /><span>Changing a local snapshot never changes flight-controller configuration.</span></div></div></Panel></div>;
+}

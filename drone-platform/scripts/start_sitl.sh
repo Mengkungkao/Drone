@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; source "$ROOT/scripts/lib.sh"; assert_simulation_only
+assert_px4_phase_gate
 [[ ! -e "$STATE/current_run" ]] || die 'a managed run is already active; use scripts/stop.sh'
 assert_supported_platform
 export PYTHONNOUSERSITE=1
-source_ros_humble
+source_ros_jazzy
 source_ros_workspace
-run="$ROOT/logs/$(date -u +%Y-%m-%d_%H%M%S)"; mkdir -p "$run"; touch "$run"/{px4,ros2,simulation,test}.log "$run/altitude.csv"
+run=$(mktemp -d "$ROOT/logs/$(date -u +%Y-%m-%d_%H%M%S)_XXXXXX"); touch "$run"/{px4,gazebo,ros2,dds,mavsdk,test}.log "$run/altitude.csv"
 ENVIRONMENT_LOG="$run/environment.log" "$ROOT/scripts/check_environment.sh"
 printf '%s\n' "$run" > "$STATE/current_run"; pids="$run/pids"
 cleanup() { "$ROOT/scripts/stop.sh" >/dev/null 2>&1 || true; }; trap cleanup ERR INT TERM
@@ -20,9 +21,9 @@ for _ in {1..60}; do grep -qE 'Ready for takeoff|INFO.*px4' "$run/px4.log" && br
 grep -qE 'Ready for takeoff|INFO.*px4' "$run/px4.log" || die 'PX4 readiness timeout'
 for _ in {1..60}; do pgrep -P "$(awk '$1=="px4"{print $2}' "$pids")" -f 'gz|ruby' >/dev/null && break; sleep 1; done
 pgrep -f 'gz sim' >/dev/null || die 'Gazebo readiness timeout'
-start_group dds "$run/simulation.log" MicroXRCEAgent udp4 -p 8888
-for _ in {1..30}; do grep -qiE 'client.*(create|connected)|session established' "$run/simulation.log" && break; sleep 1; done
-grep -qiE 'client.*(create|connected)|session established' "$run/simulation.log" || die 'DDS client connection timeout'
+start_group dds "$run/dds.log" MicroXRCEAgent udp4 -p 8888
+for _ in {1..30}; do grep -qiE 'client.*(create|connected)|session established' "$run/dds.log" && break; sleep 1; done
+grep -qiE 'client.*(create|connected)|session established' "$run/dds.log" || die 'DDS client connection timeout'
 start_group monitor "$run/ros2.log" ros2 run drone_monitor monitor
 for _ in {1..30}; do grep -q TELEMETRY_VERIFIED "$run/ros2.log" && break; sleep 1; done
 grep -q TELEMETRY_VERIFIED "$run/ros2.log" || die 'real ROS telemetry verification failed'

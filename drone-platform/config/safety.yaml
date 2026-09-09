@@ -1,7 +1,8 @@
-phase: 1
+# These interlocks belong to the legacy PX4 subsystem, not desktop capabilities.
+phase: 2
+px4_runtime_enabled: false
 simulation_only: true
 real_hardware_enabled: false
 allow_serial_devices: false
 allow_firmware_flashing: false
 connection_url: udp://:14540
-

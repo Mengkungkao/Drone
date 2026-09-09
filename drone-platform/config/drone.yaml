@@ -1,3 +1,4 @@
+# Legacy PX4 scenario settings; desktop DroneProject storage is independent.
 vehicle:
   name: development_x500
   type: quadrotor
@@ -9,4 +10,3 @@ ros2:
   enabled: true
 safety:
   real_hardware_enabled: false
-

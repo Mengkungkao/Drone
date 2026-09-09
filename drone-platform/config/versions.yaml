@@ -1,19 +1,22 @@
-# Target configuration; installed revisions remain unverified until setup succeeds.
+# Target configuration is separate from observed versions. No runtime PASS is implied.
+documentation_checked_utc: '2026-09-09'
+last_dependency_observation_utc: null
 ubuntu:
-  version: '22.04'
-  codename: jammy
+  version: '24.04'
+  codename: noble
 px4:
   version: unverified
   commit: unverified
 ros2:
-  distribution: humble
+  distribution: jazzy
+  version: unverified
 gazebo:
   distribution: harmonic
+  version: unverified
 px4_msgs:
   version: unverified
 mavsdk:
   version: unverified
 micro_xrce_dds_agent:
-  requested_version: v2.4.2
+  requested_version: v2.4.3
   version: unverified
-

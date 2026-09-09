@@ -70,7 +70,7 @@ def test_slow_armed_updates_preserve_position_collection(monkeypatch, legacy_tim
             SimpleNamespace(telemetry=telemetry), {'name': 'HOLD'},
             time.monotonic(), samples,
         )
-        assert [sample['armed'] for sample in samples] == ['false', 'false', 'true', 'true']
+        assert [sample['armed'] for sample in samples] == ['unknown', 'unknown', 'true', 'true']
         assert all(sample['altitude_m'] == 5.0 for sample in samples)
         assert telemetry.armed_closed
         assert telemetry.position_closed

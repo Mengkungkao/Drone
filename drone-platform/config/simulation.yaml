@@ -1,4 +1,8 @@
 simulation:
+  engine: gazebo
+  distribution: harmonic
+  vehicle_model: gz_x500
+  implementation_status: gated_phase_2
   world: default
   headless: auto
 mission:
@@ -8,4 +12,3 @@ mission:
   max_horizontal_drift_m: 1.0
   telemetry_timeout_s: 30
   mission_timeout_s: 240
-
