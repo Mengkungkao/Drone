@@ -1,15 +1,15 @@
 {
   "product": "DroneLab",
   "phase": 0,
-  "phase0_complete": false,
+  "phase0_complete": true,
   "phase1_complete": false,
-  "host": "Ubuntu 22.04.5 LTS x86-64, Node v22.23.2, rustc 1.98.1",
-  "environment_ready": false,
+  "host": "Ubuntu 24.04.4 LTS x86-64, Node v22.22.2, npm 10.9.7, rustc 1.94.1, 4 logical CPUs, 15 GiB RAM",
+  "environment_ready": true,
   "rust_toolchain_ready": true,
   "frontend_build_passed": true,
   "native_tests_passed": true,
-  "desktop_build_passed": false,
-  "desktop_launch_passed": false,
+  "desktop_build_passed": true,
+  "desktop_launch_passed": true,
   "sqlite_persistence_passed": true,
   "safety_latch_passed": true,
   "betaflight_adapter_ready": false,
@@ -27,31 +27,35 @@
   "bench_test_passed": false,
   "real_flight_module_ready": false,
   "blockers": [
-    "The GTK/WebKit desktop libraries Tauri links against are not installed, so the desktop shell cannot be compiled or launched on this host. Installing them requires elevation and is an operator action; see docs/installation.md.",
-    "Desktop launch, SQLite persistence through the running application, and native safety behaviour in the shipped binary remain unverified because the shell does not build.",
-    "No verified Betaflight controller has been supplied; no device communication attempted.",
-    "PX4 SITL, Gazebo and the documented ROS 2 Jazzy target are not provisioned on this host, which runs ROS 2 Humble."
+    "No verified Betaflight controller has been supplied. Phase 1 needs real hardware; no device communication has been attempted.",
+    "PX4 SITL, Gazebo and the documented ROS 2 Jazzy target are not provisioned on this host, so Phase 2 remains unstarted.",
+    "The verified launch ran on a virtual display. Rendering on a physical GPU, on Windows and on macOS is unverified."
   ],
   "evidence": [
     {
       "scope": "environment",
-      "recorded": "logs/environment-2026-09-09T11-21-19-427Z/environment.json",
-      "result": "rustToolchainPresent true; nativeToolchainPresent false (gtk+-3.0, gdk-3.0, libsoup-3.0, javascriptcoregtk-4.1, webkit2gtk-4.1, librsvg-2.0 missing)"
+      "recorded": "logs/environment-2026-09-09T11-56-22-811Z/environment.json",
+      "result": "rustToolchainPresent true; nativeToolchainPresent true; gtk+-3.0 3.24.41, gdk-3.0 3.24.41, libsoup-3.0 3.4.4, javascriptcoregtk-4.1 2.52.6, webkit2gtk-4.1 2.52.6, librsvg-2.0 2.58.0 all resolved"
     },
     {
       "scope": "unit checks",
-      "recorded": "logs/foundation-2026-09-09T11-21-29-667Z/{typecheck,test,build}.log",
+      "recorded": "logs/foundation-2026-09-09T19-59-03-747Z/{typecheck,test,build}.log",
       "result": "PASS typecheck; PASS vitest 13/13; PASS vite production build"
     },
     {
       "scope": "native runtime checks",
-      "recorded": "logs/foundation-2026-09-09T11-21-29-667Z/native-core.log",
-      "result": "PASS cargo test --workspace --no-default-features --locked; 15/15 foundation tests covering SQLite migration, snapshot immutability, transactional rollback, emergency-stop latching and the IPC contract"
+      "recorded": "logs/foundation-2026-09-09T19-59-03-747Z/{native-core,native-desktop}.log",
+      "result": "PASS cargo test --workspace --no-default-features --locked and PASS cargo test --workspace --locked; 15/15 foundation tests covering SQLite migration, snapshot immutability, transactional rollback, emergency-stop latching and the IPC contract"
     },
     {
       "scope": "built artifacts",
-      "recorded": "logs/foundation-2026-09-09T11-21-29-667Z/native-desktop.log",
-      "result": "BLOCKED cargo test --workspace --locked; gdk-sys could not locate gdk-3.0 via pkg-config"
+      "recorded": "logs/foundation-2026-09-09T19-59-03-747Z/evidence.json",
+      "result": "PASS tauri build --no-bundle produced target/release/dronelab-desktop; desktopBuildVerified true"
+    },
+    {
+      "scope": "desktop launch",
+      "recorded": "logs/launch-2026-09-09T20-01-08-382Z/launch.json",
+      "result": "PASS 14/14. The release binary rendered its window on a virtual display and reported the native runtime. A project created through the dialog, its selection, a configuration snapshot and a latched emergency stop all reloaded after the application exited and was started again against the same data directory; the stop cleared only on an explicit operator action. SQLite database written and one JSONL session log recorded per launch. Screenshots of both windows retained."
     },
     {
       "scope": "simulator or physical measurements",

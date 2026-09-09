@@ -5,18 +5,38 @@ Work one phase at a time. Phase 0 must launch as a native application, persist a
 From `drone-platform`:
 
 ```bash
-npm install
+npm install --include=dev
 npm run typecheck
 npm test
 npm run build
 npm run check:environment
-npm run check:foundation
 npm run test:native
 npm run desktop:build
+npm run check:foundation
 npm run desktop:dev
 ```
 
+Pass `--include=dev` when the shell exports `NODE_ENV=production`; npm otherwise omits the Tauri CLI, Vite and TypeScript, and `desktop:build` fails with `tauri: not found`.
+
 `npm run test:native` builds the desktop feature and therefore needs the platform's GUI toolchain. Where that is unavailable, `cargo test --workspace --no-default-features` runs the same storage, migration and safety suite without the window layer; `npm run check:foundation` records both and marks the shell `BLOCKED` rather than passing. A blocked shell is never Phase 0 evidence.
+
+Build the desktop binary before `npm run check:foundation`. The checker's last step launches it, so it needs an artifact to start.
+
+## Launch verification
+
+Linking the shell proves it compiles; Phase 0 asks for an application that runs. `npm run check:launch` starts the binary from `target/`, drives the window through WebDriver and records what it observed:
+
+1. the shell renders and reports the native runtime rather than the browser preview;
+2. a new data directory opens `DISCONNECTED` with no projects;
+3. a project created through the dialog becomes the active airframe;
+4. a configuration snapshot saves from the configuration workspace;
+5. the emergency stop latches from the operator control.
+
+The application then exits and is started again against the same data directory. Nothing is seeded between runs, so the project, its selection, its snapshot history and the latched stop that appear in the second window were reloaded from SQLite by the application itself. The run finishes by clearing the stop, which only an explicit operator action may do.
+
+Evidence lands in `logs/launch-<timestamp>/`: `launch.json` with a pass/fail record per check, PNG screenshots of both windows, the driver logs, and the isolated data directory holding the SQLite database and the per-run JSONL session logs. `XDG_DATA_HOME` points at that directory, so a verification run never touches a real workspace.
+
+It needs `tauri-driver` (`cargo install tauri-driver --locked`) and `WebKitWebDriver`. On a headless host it starts `Xvfb` itself and uses `DISPLAY` when one already exists. A virtual display is still a display: the binary, GTK, WebKit, the IPC bridge and SQLite are the shipped ones.
 
 Use `npm run dev` for browser preview. It exercises the React shell and clearly unavailable native operations. It is not a substitute for the Tauri launch requirement.
 

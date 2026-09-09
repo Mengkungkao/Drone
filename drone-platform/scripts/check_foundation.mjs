@@ -47,17 +47,42 @@ if (desktopTests.librariesMissing) {
   console.error('BLOCKED: the desktop shell cannot be compiled on this host. See docs/installation.md.');
 }
 
+// Compiling the shell proves it links, not that it runs. Phase 0 asks for a launched
+// application, so the shipped binary is started and driven; a shell that cannot be built
+// is reported as blocked rather than silently skipped.
+function launchCheck() {
+  if (!desktopTests.passed) {
+    console.log('BLOCKED native-launch');
+    return { name: 'native-launch', passed: false, blocked: true,
+      reason: 'The desktop shell did not build, so no binary could be launched.' };
+  }
+  const outcome = spawnSync(process.execPath, [path.join(root, 'scripts', 'check_desktop_launch.mjs')], {
+    cwd: root, encoding: 'utf8', windowsHide: true, timeout: 900_000,
+  });
+  const log = `${outcome.stdout ?? ''}${outcome.stderr ?? ''}${outcome.error?.message ?? ''}`;
+  fs.writeFileSync(path.join(runDir, 'native-launch.log'), log);
+  const passed = !outcome.error && outcome.status === 0;
+  console.log(`${passed ? 'PASS' : 'FAIL'} native-launch`);
+  if (!passed) console.error(log);
+  const evidence = fs.readdirSync(path.join(root, 'logs')).filter((entry) => entry.startsWith('launch-')).sort().pop();
+  return { name: 'native-launch', passed, blocked: false, exitCode: outcome.status,
+    evidence: evidence ? path.join('logs', evidence, 'launch.json') : null };
+}
+
+const launchTests = launchCheck();
+const unitChecksPassed = checks.every((check) => check.passed);
 const report = {
   recordedAt: new Date().toISOString(), scope: 'Phase 0 automated foundation checks',
   versions: { node: process.version, npm: process.env.npm_config_user_agent ?? 'unknown' },
   checks,
   nativeTests: coreTests,
   desktopTests,
+  launchTests,
   desktopBuildVerified: desktopTests.passed,
-  desktopLaunchVerified: false,
-  phase0Complete: false,
-  note: 'Automated checks alone do not prove desktop launch, hardware integration, or flight readiness.',
+  desktopLaunchVerified: launchTests.passed,
+  phase0Complete: unitChecksPassed && coreTests.passed && desktopTests.passed && launchTests.passed,
+  note: 'These gates cover the desktop application. They prove no hardware integration, simulator run, or flight readiness.',
 };
 fs.writeFileSync(path.join(runDir, 'evidence.json'), `${JSON.stringify(report, null, 2)}\n`);
 console.log(`Evidence: ${runDir}`);
-if (checks.some((check) => !check.passed) || !coreTests.passed || !desktopTests.passed) process.exitCode = 1;
+if (!report.phase0Complete) process.exitCode = 1;
