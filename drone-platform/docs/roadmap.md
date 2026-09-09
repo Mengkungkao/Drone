@@ -18,4 +18,4 @@ Only the current phase should be implemented to completion before advancing. Sou
 | 11 | Digital twin comparison | Traceable measured simulation/bench/flight comparisons |
 | 12 | Advanced engineering | Validated analysis, recommendations and reproducible regression reports |
 
-Current focus is Phase 0. The inspected host lacks native build prerequisites and a simulator environment. Phase 1 requires actual verified hardware. The rest of this table describes future scope, not implemented product functionality.
+Current focus is Phase 0. On the inspected Ubuntu 22.04 host the Rust toolchain, TypeScript checks, unit tests, production frontend build and the native storage/safety suite pass; the GTK/WebKit libraries Tauri needs are absent, so the desktop shell does not compile and the required native launch is unverified. Phase 1 requires actual verified hardware. The rest of this table describes future scope, not implemented product functionality.

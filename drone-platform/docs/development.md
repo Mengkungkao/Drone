@@ -16,6 +16,8 @@ npm run desktop:build
 npm run desktop:dev
 ```
 
+`npm run test:native` builds the desktop feature and therefore needs the platform's GUI toolchain. Where that is unavailable, `cargo test --workspace --no-default-features` runs the same storage, migration and safety suite without the window layer; `npm run check:foundation` records both and marks the shell `BLOCKED` rather than passing. A blocked shell is never Phase 0 evidence.
+
 Use `npm run dev` for browser preview. It exercises the React shell and clearly unavailable native operations. It is not a substitute for the Tauri launch requirement.
 
 Frontend application code depends on typed domain contracts. Native commands revalidate external inputs and own safety-sensitive operations. Register concrete capabilities rather than assuming every firmware implements position control, motor commands, or configuration writes. An unavailable implementation returns an error and never manufactures identity or telemetry.
