@@ -1,5 +1,5 @@
 {
-  "environment_checked": true,
+  "environment_checked": false,
   "environment_ready": false,
   "px4_source_ready": false,
   "px4_build_passed": false,

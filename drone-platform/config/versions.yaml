@@ -1,10 +1,12 @@
-# Upstream lookup was attempted on 2026-09-08 but outbound GitHub access returned
-# HTTP 403. Values remain deliberately unverified rather than fabricated.
+# Target configuration; installed revisions remain unverified until setup succeeds.
+ubuntu:
+  version: '22.04'
+  codename: jammy
 px4:
   version: unverified
   commit: unverified
 ros2:
-  distribution: jazzy
+  distribution: humble
 gazebo:
   distribution: harmonic
 px4_msgs:
@@ -12,5 +14,6 @@ px4_msgs:
 mavsdk:
   version: unverified
 micro_xrce_dds_agent:
+  requested_version: v2.4.2
   version: unverified
 

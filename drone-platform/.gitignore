@@ -1,10 +1,16 @@
 third_party/
+.venv/
+.px4-venv/
+ros2_ws/src/px4_msgs/
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 logs/*
 !logs/.gitkeep
 .state/current_run
+.state/downloads/
+.state/pre-humble.*/
+.pytest_cache/
 __pycache__/
 *.pyc
 
