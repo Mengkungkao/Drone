@@ -10,6 +10,7 @@
   "native_tests_passed": true,
   "desktop_build_passed": true,
   "desktop_launch_passed": true,
+  "operator_flow_passed": true,
   "sqlite_persistence_passed": true,
   "safety_latch_passed": true,
   "betaflight_adapter_ready": false,
@@ -27,9 +28,10 @@
   "bench_test_passed": false,
   "real_flight_module_ready": false,
   "blockers": [
+    "The operator path through the running window is driven by an automated WebDriver client, not a person. It shows a project, a snapshot and the safety latch survive a restart through the real interface; it is not a usability trial, and no human has repeated it by hand on this host.",
+    "The verified launch ran on a virtual display. Rendering on a physical GPU, on Windows and on macOS is unverified.",
     "No verified Betaflight controller has been supplied. Phase 1 needs real hardware; no device communication has been attempted.",
-    "PX4 SITL, Gazebo and the documented ROS 2 Jazzy target are not provisioned on this host, so Phase 2 remains unstarted.",
-    "The verified launch ran on a virtual display. Rendering on a physical GPU, on Windows and on macOS is unverified."
+    "PX4 SITL, Gazebo and the documented ROS 2 Jazzy target are not provisioned on this host, so Phase 2 remains unstarted."
   ],
   "evidence": [
     {
@@ -39,23 +41,28 @@
     },
     {
       "scope": "unit checks",
-      "recorded": "logs/foundation-2026-09-09T19-59-03-747Z/{typecheck,test,build}.log",
+      "recorded": "logs/foundation-2026-09-10T01-45-13-537Z/{typecheck,test,build}.log",
       "result": "PASS typecheck; PASS vitest 13/13; PASS vite production build"
     },
     {
       "scope": "native runtime checks",
-      "recorded": "logs/foundation-2026-09-09T19-59-03-747Z/{native-core,native-desktop}.log",
+      "recorded": "logs/foundation-2026-09-10T01-45-13-537Z/{native-core,native-desktop}.log",
       "result": "PASS cargo test --workspace --no-default-features --locked and PASS cargo test --workspace --locked; 15/15 foundation tests covering SQLite migration, snapshot immutability, transactional rollback, emergency-stop latching and the IPC contract"
     },
     {
       "scope": "built artifacts",
-      "recorded": "logs/foundation-2026-09-09T19-59-03-747Z/evidence.json",
+      "recorded": "logs/foundation-2026-09-10T01-45-13-537Z/evidence.json",
       "result": "PASS tauri build --no-bundle produced target/release/dronelab-desktop; desktopBuildVerified true"
     },
     {
-      "scope": "desktop launch",
-      "recorded": "logs/launch-2026-09-09T20-01-08-382Z/launch.json",
-      "result": "PASS 14/14. The release binary rendered its window on a virtual display and reported the native runtime. A project created through the dialog, its selection, a configuration snapshot and a latched emergency stop all reloaded after the application exited and was started again against the same data directory; the stop cleared only on an explicit operator action. SQLite database written and one JSONL session log recorded per launch. Screenshots of both windows retained."
+      "scope": "native launch",
+      "recorded": "logs/launch-2026-09-10T01-45-30-767Z/evidence.json",
+      "result": "PASS 8/8 against the release binary on :99 (Xvfb 3042). Two launches: storage provisioned then reopened, user_version 2, migrations applied once not repeated, safety DISCONNECTED, one audited application_start and one retained session log per run, read directly from SQLite."
+    },
+    {
+      "scope": "operator flow",
+      "recorded": "logs/operator-2026-09-10T01-45-33-572Z/operator-flow.json",
+      "result": "PASS 14/14. The release binary rendered its window and reported the native runtime. A project created through the dialog, its selection, a configuration snapshot and a latched emergency stop all reloaded after the application exited and was started again against the same data directory; the stop cleared only on an explicit action. Screenshots of both windows retained. Driven by an automated WebDriver client, not a person."
     },
     {
       "scope": "simulator or physical measurements",

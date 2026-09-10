@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:native": "cargo test --workspace",
     "check:environment": "node scripts/check_desktop_environment.mjs",
-    "check:launch": "node scripts/check_desktop_launch.mjs",
+    "check:launch": "node scripts/check_launch.mjs",
+    "check:operator": "node scripts/check_operator_flow.mjs",
     "check:foundation": "node scripts/check_foundation.mjs"
   },
   "devDependencies": {

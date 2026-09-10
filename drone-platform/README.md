@@ -2,7 +2,7 @@
 
 DroneLab is an engineering desktop application around existing flight-control firmware. Its architecture separates Betaflight over MSP, PX4 over MAVLink, and an independent simulation engine backed by Gazebo and the X500 model. Shared project, telemetry, diagnostics, test, Blackbox, and report contracts sit above those integrations.
 
-**Phase 0: architecture and foundation** is complete and verified. The desktop source includes a React/TypeScript shell, Tauri/Rust backend, versioned SQLite storage, project model, explicit adapter capabilities, and safety states. The gate is not the browser build: `npm run check:foundation` launches the shipped binary, creates a project and a snapshot through the window, latches the emergency stop, restarts the application and confirms all of it reloaded from SQLite. Hardware communication, configuration writes, flashing, motors, and real flight remain unavailable.
+**Phase 0: architecture and foundation** is complete and verified. The desktop source includes a React/TypeScript shell, Tauri/Rust backend, versioned SQLite storage, project model, explicit adapter capabilities, and safety states. The gate is not the browser build: `npm run check:foundation` launches the shipped binary under two checks — `check:launch` reads SQLite directly to confirm storage is provisioned, migrated once and reopened across a restart, and `check:operator` creates a project and a snapshot through the running window, latches the emergency stop, restarts the application and confirms all of it reloaded. Hardware communication, configuration writes, flashing, motors, and real flight remain unavailable.
 
 ```text
                        DroneLab Desktop

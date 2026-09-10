@@ -1,30 +1,36 @@
-// Phase 0 requires a real desktop launch, not a compiled artifact. This harness starts the
-// shipped binary through WebDriver, drives the window an operator would use, restarts the
+// check_launch.mjs proves the runtime starts, migrates storage and reopens it, and says
+// plainly that it does not exercise operator-driven work through the user interface. This
+// is that missing layer: it drives the window an operator would use, restarts the
 // application against the same data directory, and records what each run actually observed.
-// It never writes application state itself: every assertion reads the running window.
+// It never writes application state itself — every assertion reads the running window.
 import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { locateTool, startDisplay } from './lib/display.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const runDir = path.join(root, 'logs', `launch-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+const runDir = path.join(root, 'logs', `operator-${new Date().toISOString().replace(/[:.]/g, '-')}`);
 const homeDir = path.join(runDir, 'home');
-const dataDir = path.join(homeDir, 'dev.dronelab.desktop');
 const shotDir = path.join(runDir, 'screenshots');
+// Take the identifier from the application's own configuration; a hardcoded copy would
+// silently point at the wrong directory the moment someone renames the bundle.
+const identifier = JSON.parse(fs.readFileSync(path.join(root, 'apps/desktop/src-tauri/tauri.conf.json'), 'utf8')).identifier;
+const dataHomeVariable = { linux: 'XDG_DATA_HOME', win32: 'APPDATA', darwin: 'HOME' }[process.platform];
+const dataDir = path.join(homeDir, process.platform === 'darwin' ? 'Library/Application Support' : '', identifier);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const checks = [];
 const processes = [];
 const report = {
   recordedAt: new Date().toISOString(),
-  scope: 'Phase 0 desktop launch verification',
+  scope: 'Phase 0 operator flow through the running window',
   host: { platform: process.platform, release: os.release(), node: process.version },
   binary: null, display: null, dataDirectory: path.relative(root, dataDir),
   screenshots: [], checks, sessionLogs: [], passed: false, failure: null,
-  note: 'Evidence covers the desktop application only. It proves no hardware, firmware or flight capability.',
+  note: 'Covers operator-driven work in the running window, driven by an automated WebDriver client rather than a person. It proves no hardware, firmware or flight capability.',
 };
 function record(name, passed, detail) {
   checks.push({ name, passed, detail, observedAt: new Date().toISOString() });
@@ -33,16 +39,13 @@ function record(name, passed, detail) {
 }
 
 function binary() {
+  if (process.env.DRONELAB_BINARY) return { path: process.env.DRONELAB_BINARY, profile: 'DRONELAB_BINARY' };
+  const name = process.platform === 'win32' ? 'dronelab-desktop.exe' : 'dronelab-desktop';
   for (const profile of ['release', 'debug']) {
-    const candidate = path.join(root, 'target', profile, 'dronelab-desktop');
+    const candidate = path.join(root, 'target', profile, name);
     if (fs.existsSync(candidate)) return { path: candidate, profile };
   }
-  throw new Error('No desktop binary. Run npm run desktop:build first.');
-}
-
-function tool(name) {
-  const found = spawnSync('sh', ['-c', `command -v ${name}`], { encoding: 'utf8' });
-  return found.status === 0 ? found.stdout.trim() : null;
+  throw new Error('No desktop binary. Run npm run desktop:build first, or set DRONELAB_BINARY.');
 }
 
 function portFree(port) {
@@ -75,24 +78,6 @@ function track(name, child, logPath) {
   child.on('error', (error) => console.error(`${name} could not start: ${error.message}`));
   processes.push({ name, child });
   return child;
-}
-
-// A headless host has no display, and Tauri cannot map a window without one. Xvfb is a
-// display, not a substitute runtime: the binary, GTK, WebKit and the IPC bridge are real.
-async function startDisplay() {
-  if (process.env.DISPLAY) return { display: process.env.DISPLAY, provider: 'inherited' };
-  if (!tool('Xvfb')) throw new Error('No DISPLAY and Xvfb is not installed. See docs/installation.md.');
-  for (let number = 99; number < 130; number += 1) {
-    if (fs.existsSync(`/tmp/.X11-unix/X${number}`)) continue;
-    const child = track('Xvfb', spawn('Xvfb', [`:${number}`, '-screen', '0', '1600x1000x24', '-nolisten', 'tcp'],
-      { stdio: ['ignore', 'pipe', 'pipe'] }), path.join(runDir, 'xvfb.log'));
-    for (let attempt = 0; attempt < 50; attempt += 1) {
-      await sleep(100);
-      if (fs.existsSync(`/tmp/.X11-unix/X${number}`)) return { display: `:${number}`, provider: `Xvfb ${child.pid}` };
-      if (child.exitCode !== null) break;
-    }
-  }
-  throw new Error('Xvfb did not provide a display');
 }
 
 class Session {
@@ -222,7 +207,7 @@ async function firstLaunch(base, environment) {
   try {
     const opened = await session.until('the workspace to open', (state) => !state.loading && state.runtime.length > 0, 60_000);
     record('desktop_launch', opened.runtime.length > 0 && !opened.loading,
-      `${report.binary.profile} binary rendered its window on ${report.display.display} (${report.display.provider})`);
+      `${report.binary.profile} binary rendered its window on ${report.display.name ?? 'the platform default display'} (${report.display.provider})`);
     record('native_runtime', opened.runtime.includes('Native desktop runtime') && !opened.preview,
       `status bar reports "${opened.runtime}"`);
     record('default_safety_state', opened.safety === 'disconnected',
@@ -284,18 +269,19 @@ async function secondLaunch(base, environment) {
 async function main() {
   for (const directory of [runDir, homeDir, shotDir]) fs.mkdirSync(directory, { recursive: true });
   report.binary = binary();
-  const driverPath = tool('tauri-driver') ?? path.join(os.homedir(), '.cargo', 'bin', 'tauri-driver');
+  const driverPath = locateTool('tauri-driver') ?? path.join(os.homedir(), '.cargo', 'bin', 'tauri-driver');
   if (!fs.existsSync(driverPath)) throw new Error('tauri-driver is not installed. Run: cargo install tauri-driver --locked');
-  if (!tool('WebKitWebDriver')) throw new Error('WebKitWebDriver is not installed. See docs/installation.md.');
+  if (!locateTool('WebKitWebDriver')) throw new Error('WebKitWebDriver is not installed. See docs/installation.md.');
 
-  report.display = await startDisplay();
+  const display = await startDisplay(path.join(runDir, 'xvfb.log'));
+  processes.push({ name: 'Xvfb', child: { kill: () => display.stop() } });
+  report.display = { name: display.display, provider: display.provider };
   const port = await freePort(4444);
   const nativePort = await freePort(port + 1);
   const environment = {
-    DISPLAY: report.display.display,
-    XDG_DATA_HOME: homeDir, XDG_CONFIG_HOME: path.join(runDir, 'config'), XDG_CACHE_HOME: path.join(runDir, 'cache'),
-    // Container graphics stacks have no GPU compositor; WebKit must fall back to software.
-    WEBKIT_DISABLE_COMPOSITING_MODE: '1', WEBKIT_DISABLE_DMABUF_RENDERER: '1', LIBGL_ALWAYS_SOFTWARE: '1',
+    ...display.env,
+    ...(display.display ? { DISPLAY: display.display } : {}),
+    [dataHomeVariable]: homeDir, XDG_CONFIG_HOME: path.join(runDir, 'config'), XDG_CACHE_HOME: path.join(runDir, 'cache'),
   };
   track('tauri-driver', spawn(driverPath, ['--port', String(port), '--native-port', String(nativePort)],
     { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...environment } }), path.join(runDir, 'tauri-driver.log'));
@@ -324,14 +310,14 @@ try {
   await main();
 } catch (error) {
   report.failure = error.message;
-  console.error(`\nDesktop launch verification failed: ${report.failure}`);
+  console.error(`\nOperator flow verification failed: ${report.failure}`);
 } finally {
   for (const { child } of [...processes].reverse()) { try { child.kill('SIGTERM'); } catch { /* already exited */ } }
   await sleep(500);
   for (const { child } of processes) { try { child.kill('SIGKILL'); } catch { /* already exited */ } }
   fs.mkdirSync(runDir, { recursive: true });
-  fs.writeFileSync(path.join(runDir, 'launch.json'), `${JSON.stringify(report, null, 2)}\n`);
-  console.log(`${report.passed ? 'PASS' : 'FAIL'} desktop launch verification`);
-  console.log(`Launch evidence: ${runDir}`);
+  fs.writeFileSync(path.join(runDir, 'operator-flow.json'), `${JSON.stringify(report, null, 2)}\n`);
+  console.log(`${report.passed ? 'PASS' : 'FAIL'} operator flow verification`);
+  console.log(`Operator flow evidence: ${runDir}`);
   process.exitCode = report.passed ? 0 : 1;
 }
