@@ -28,7 +28,7 @@ npm run desktop:build
 npm run check:foundation
 ```
 
-`npm run desktop:dev` launches Tauri for day-to-day work, `npm run test:native` runs the Rust suite, and `npm run check:launch` runs the launch gate on its own. `npm run dev` gives a browser preview with no native hardware or SQLite access; it never counts as launch evidence. See [installation](docs/installation.md) and [development](docs/development.md).
+`npm run desktop:dev` launches Tauri for day-to-day work, `npm run test:native` runs the Rust suite, and `npm run check:launch` / `npm run check:operator` run each launch gate on its own. CI runs the whole gate on every pull request and keeps the evidence as a build artifact. `npm run dev` gives a browser preview with no native hardware or SQLite access; it never counts as launch evidence. See [installation](docs/installation.md) and [development](docs/development.md).
 
 The previous PX4-only project is retained as a **future Phase 2 subsystem** in `scripts/`, `ros2_ws/`, and `simulation/`. It now targets Ubuntu 24.04, ROS 2 Jazzy, and Gazebo Harmonic. `scripts/test_px4_sitl.sh` is the explicit mission entry point; the old `test_phase1.sh` forwards to the same gates. It is not the Betaflight Phase 1 test. No simulator, DDS, telemetry, or flight PASS is claimed.
 

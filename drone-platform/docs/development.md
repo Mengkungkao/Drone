@@ -52,6 +52,12 @@ It needs `tauri-driver` (`cargo install tauri-driver --locked`) and `WebKitWebDr
 
 One limit to keep in view when reading the evidence: this drives the interface with an automated WebDriver client, not a person. It shows the operator path works; it is not a usability trial.
 
+## Continuous integration
+
+`.github/workflows/phase-gate.yml` runs the same gate on every pull request and on pushes to `main`. It installs the GTK/WebKit stack, Xvfb and `WebKitWebDriver`, builds the release binary, then runs `check:foundation` — so CI starts a real window rather than stopping at compilation, exactly as a contributor does locally.
+
+The run uploads `logs/` as a build artifact whether it passes or fails. A failed launch is precisely when the screenshots and per-check records are worth reading, so they are kept for 14 days rather than discarded with the runner.
+
 Use `npm run dev` for browser preview. It exercises the React shell and clearly unavailable native operations. It is not a substitute for the Tauri launch requirement.
 
 Frontend application code depends on typed domain contracts. Native commands revalidate external inputs and own safety-sensitive operations. Register concrete capabilities rather than assuming every firmware implements position control, motor commands, or configuration writes. An unavailable implementation returns an error and never manufactures identity or telemetry.

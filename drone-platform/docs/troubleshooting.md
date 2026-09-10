@@ -8,6 +8,7 @@
 | `check:launch` reports no desktop binary | It launches an artifact rather than building one. Run `npm run desktop:build` first. |
 | `check:launch` cannot reach a display | Install `xvfb`, or export a `DISPLAY` the harness can use. It never fabricates a launch result when neither exists. |
 | `tauri-driver` or `WebKitWebDriver` missing | Install both as described in [installation](installation.md#launch-verification-prerequisites). Without them the launch gate fails rather than being skipped. |
+| Phase gate fails in CI but passes locally | Download the run's `phase-gate-evidence` artifact. It holds the same `logs/` tree as a local run: screenshots of both windows, per-check records, driver logs and the isolated SQLite database. |
 | Launch checks time out on the first window | Read `logs/launch-<timestamp>/tauri-driver.log` and the screenshots. A window that maps but never leaves the loading panel usually means the native workspace failed to open, which the running application reports in its error banner. |
 | Adapter shows unavailable | This is an explicit capability state. Phase 0 does not connect to flight controllers. |
 | PX4 script says Phase 1 is gated | Phase 1 now means the Betaflight read-only hardware slice. Historical `.state/phase1.json` cannot satisfy it. |
