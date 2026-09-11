@@ -3,6 +3,7 @@ pub mod application;
 pub mod domain;
 pub mod error;
 pub mod infrastructure;
+pub mod msp;
 pub mod safety;
 pub mod simulation;
 

@@ -18,11 +18,18 @@ pub enum AppError {
     NewerSchema(i64),
     #[error("{0}")]
     Integrity(String),
+    #[error("Protocol error: {0}")]
+    Protocol(String),
 }
 
 pub type Result<T> = std::result::Result<T, AppError>;
 
 impl AppError {
+    /// Critical errors latch a FAULT the operator must clear. Storage and integrity
+    /// failures qualify because the application can no longer trust its own state.
+    /// A protocol error does not: a malformed frame says something about the device or
+    /// the cable, and the right response is to fail that read closed and report it, not
+    /// to put the whole workspace into a state needing manual recovery.
     pub fn is_critical(&self) -> bool {
         matches!(
             self,

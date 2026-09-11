@@ -5,28 +5,58 @@ Work one phase at a time. Phase 0 must launch as a native application, persist a
 From `drone-platform`:
 
 ```bash
-npm install
+npm install --include=dev
 npm run typecheck
 npm test
 npm run build
 npm run check:environment
-npm run check:foundation
 npm run test:native
 npm run desktop:build
 npm run check:launch
+npm run check:operator
+npm run check:foundation
 npm run desktop:dev
 ```
 
-`npm run check:launch` is the Phase 0 native launch gate. It starts the built binary twice
-against a throwaway data directory, then asserts what a completed startup must leave behind:
-the schema at its current version, migrations applied once rather than repeated on restart,
-safety latched to `DISCONNECTED`, one audited `application_start` per run, and a retained
-session log per run. It reports `BLOCKED` when no binary has been built, records a failure
-rather than crashing when startup produces nothing, and is the only check that may set
-`desktop_launch_passed`. It does not drive the user interface, so operator-driven project
-creation still needs manual confirmation, and it makes no hardware or simulation claim.
+Pass `--include=dev` when the shell exports `NODE_ENV=production`; npm otherwise omits the Tauri CLI, Vite and TypeScript, and `desktop:build` fails with `tauri: not found`.
 
 `npm run test:native` builds the desktop feature and therefore needs the platform's GUI toolchain. Where that is unavailable, `cargo test --workspace --no-default-features` runs the same storage, migration and safety suite without the window layer; `npm run check:foundation` records both and marks the shell `BLOCKED` rather than passing. A blocked shell is never Phase 0 evidence.
+
+Build the desktop binary before `npm run check:foundation`. Its last two steps launch it, so it needs an artifact to start.
+
+## Launch verification
+
+Linking the shell proves it compiles; Phase 0 asks for an application that runs. Two gates answer different questions about the same binary, and both must pass.
+
+### `npm run check:launch` — what a startup leaves behind
+
+Starts the built binary twice against a throwaway data directory, then asserts what a completed startup must have written: the schema at its current version, migrations applied once rather than repeated on restart, safety latched to `DISCONNECTED`, one audited `application_start` per run, and a retained session log per run. It reads SQLite directly, so a storage fault cannot hide behind a rendered screen.
+
+It reports `BLOCKED` when no binary has been built and records a failure rather than crashing when startup produces nothing. It needs no display server or WebDriver, which makes it the gate that still runs where the tooling below is unavailable. It does not drive the user interface.
+
+### `npm run check:operator` — what an operator can do in the window
+
+Drives the running window over WebDriver and records what it observed:
+
+1. the shell renders and reports the native runtime rather than the browser preview;
+2. a new data directory opens `DISCONNECTED` with no projects;
+3. a project created through the dialog becomes the active airframe;
+4. a configuration snapshot saves from the configuration workspace;
+5. the emergency stop latches from the operator control.
+
+The application then exits and is started again against the same data directory. Nothing is seeded between runs, so the project, its selection, its snapshot history and the latched stop that appear in the second window were reloaded from SQLite by the application itself. The run finishes by clearing the stop, which only an explicit operator action may do.
+
+Evidence lands in `logs/operator-<timestamp>/`: `operator-flow.json` with a pass/fail record per check, PNG screenshots of both windows, the driver logs, and the isolated data directory holding the SQLite database and the per-run JSONL session logs. The platform's app-data root is redirected there, so a verification run never touches a real workspace.
+
+It needs `tauri-driver` (`cargo install tauri-driver --locked`) and `WebKitWebDriver`. On a headless host it starts `Xvfb` itself and uses `DISPLAY` when one already exists. A virtual display is still a display: the binary, GTK, WebKit, the IPC bridge and SQLite are the shipped ones.
+
+One limit to keep in view when reading the evidence: this drives the interface with an automated WebDriver client, not a person. It shows the operator path works; it is not a usability trial.
+
+## Continuous integration
+
+`.github/workflows/phase-gate.yml` runs the same gate on every pull request and on pushes to `main`. It installs the GTK/WebKit stack, Xvfb and `WebKitWebDriver`, builds the release binary, then runs `check:foundation` — so CI starts a real window rather than stopping at compilation, exactly as a contributor does locally.
+
+The run uploads `logs/` as a build artifact whether it passes or fails. A failed launch is precisely when the screenshots and per-check records are worth reading, so they are kept for 14 days rather than discarded with the runner.
 
 Use `npm run dev` for browser preview. It exercises the React shell and clearly unavailable native operations. It is not a substitute for the Tauri launch requirement.
 

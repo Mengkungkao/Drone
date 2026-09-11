@@ -46,7 +46,7 @@ pub fn flight_controller_catalog() -> Vec<AdapterDescriptor> {
         AdapterDescriptor {
             id: "betaflight".into(), name: "Betaflight Adapter".into(), protocol: "MSP / USB serial".into(),
             target: "Real flight controller".into(), status: AdapterStatus::Unavailable,
-            reason: "Phase 1: verified controller discovery and read-only MSP transport have not been implemented.".into(), capabilities: vec![],
+            reason: "Phase 1 in progress: MSP framing and identity decoding exist and are unit tested. Serial transport, controller discovery and verified identification are not implemented, so no controller can be contacted.".into(), capabilities: vec![],
         },
         AdapterDescriptor {
             id: "px4".into(), name: "PX4 Adapter".into(), protocol: "MAVLink / MAVSDK".into(),

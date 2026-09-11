@@ -4,6 +4,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { startDisplay } from './lib/display.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runDir = path.join(root, 'logs', `launch-${new Date().toISOString().replace(/[:.]/g, '-')}`);
@@ -27,7 +28,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function launch(attempt) {
   const process_ = spawn(binary, [], {
     cwd: root, encoding: 'utf8',
-    env: { ...process.env, [dataHomeVariable]: dataRoot },
+    env: { ...process.env, [dataHomeVariable]: dataRoot, ...displayEnv },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let stdout = '';
@@ -107,6 +108,9 @@ if (!binary) {
   process.exit(1);
 }
 
+const display = await startDisplay(path.join(runDir, 'xvfb.log'));
+const displayEnv = { ...display.env, ...(display.display ? { DISPLAY: display.display } : {}) };
+
 // Two launches: the first must provision storage, the second must reopen it. A restart that
 // silently re-migrated or discarded the workspace would fail the Phase 0 persistence gate.
 function launchDetail(result) {
@@ -145,12 +149,13 @@ const passed = results.every((result) => result.passed);
 const report = {
   recordedAt: new Date().toISOString(), scope: 'Phase 0 native launch',
   binary, identifier, isolatedDataDirectory: dataDirectory,
-  display: { DISPLAY: process.env.DISPLAY ?? null, WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY ?? null },
+  display: { name: display.display, provider: display.provider },
   launches: [first, second], database, sessionLogDirectories: sessions.length, checks: results,
   desktopLaunchVerified: passed,
   note: 'Proves the native runtime launches, migrates storage, latches safety defaults and reopens an existing workspace across a restart. It does not exercise operator-driven project creation through the user interface, and it makes no hardware or simulation claim.',
 };
 fs.writeFileSync(path.join(runDir, 'evidence.json'), `${JSON.stringify(report, null, 2)}\n`);
 fs.rmSync(dataRoot, { recursive: true, force: true });
+display.stop();
 console.log(`Evidence: ${runDir}`);
 if (!passed) process.exitCode = 1;

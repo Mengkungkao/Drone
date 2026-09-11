@@ -2,7 +2,7 @@
 
 DroneLab is an engineering desktop application around existing flight-control firmware. Its architecture separates Betaflight over MSP, PX4 over MAVLink, and an independent simulation engine backed by Gazebo and the X500 model. Shared project, telemetry, diagnostics, test, Blackbox, and report contracts sit above those integrations.
 
-The current work is **Phase 0: architecture and foundation**. The desktop source includes a React/TypeScript shell, Tauri/Rust backend, versioned SQLite storage, project model, explicit adapter capabilities, and safety states. On the current Ubuntu 22.04 development host the native release build compiles and `npm run check:launch` has verified two real launches of that binary: storage is provisioned then reopened, migrations apply once, safety latches to DISCONNECTED, and each run is audited and logged. A human has not yet confirmed project creation through the running window, so Phase 0 is not yet marked complete. Hardware communication, configuration writes, flashing, motors, and real flight remain unavailable.
+**Phase 0: architecture and foundation** is complete and verified. The desktop source includes a React/TypeScript shell, Tauri/Rust backend, versioned SQLite storage, project model, explicit adapter capabilities, and safety states. The gate is not the browser build: `npm run check:foundation` launches the shipped binary under two checks — `check:launch` reads SQLite directly to confirm storage is provisioned, migrated once and reopened across a restart, and `check:operator` creates a project and a snapshot through the running window, latches the emergency stop, restarts the application and confirms all of it reloaded. Hardware communication, configuration writes, flashing, motors, and real flight remain unavailable.
 
 ```text
                        DroneLab Desktop
@@ -22,13 +22,13 @@ The current work is **Phase 0: architecture and foundation**. The desktop source
 From this directory:
 
 ```bash
-npm install
+npm install --include=dev
 npm run check:environment
+npm run desktop:build
 npm run check:foundation
-npm run dev
 ```
 
-With the native prerequisites installed, use `npm run desktop:dev` to launch Tauri, `npm run desktop:build` to build it, and `npm run test:native` for Rust tests. See [installation](docs/installation.md) and [development](docs/development.md). Browser preview has no native hardware or SQLite access.
+`npm run desktop:dev` launches Tauri for day-to-day work, `npm run test:native` runs the Rust suite, and `npm run check:launch` / `npm run check:operator` run each launch gate on its own. CI runs the whole gate on every pull request and keeps the evidence as a build artifact. `npm run dev` gives a browser preview with no native hardware or SQLite access; it never counts as launch evidence. See [installation](docs/installation.md) and [development](docs/development.md).
 
 The previous PX4-only project is retained as a **future Phase 2 subsystem** in `scripts/`, `ros2_ws/`, and `simulation/`. It now targets Ubuntu 24.04, ROS 2 Jazzy, and Gazebo Harmonic. `scripts/test_px4_sitl.sh` is the explicit mission entry point; the old `test_phase1.sh` forwards to the same gates. It is not the Betaflight Phase 1 test. No simulator, DDS, telemetry, or flight PASS is claimed.
 

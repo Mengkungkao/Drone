@@ -2,26 +2,29 @@
 
 Desktop development and PX4 simulation have separate prerequisites. The desktop can be developed on Windows or Linux. The future PX4 subsystem targets Ubuntu 24.04 LTS x86-64, ROS 2 Jazzy, and Gazebo Harmonic.
 
-The currently inspected host is Ubuntu 22.04.5 LTS x86-64 with Node.js 22.23.2, npm 10.9.8, rustc/cargo 1.98.1, GCC 11.4.0, CMake 3.22.1, 20 logical CPUs, approximately 15.25 GiB RAM and 17.48 GiB free storage. The GTK/WebKit libraries Tauri links against are not installed, so the desktop shell does not compile here. Docker and Gazebo are absent, and the installed ROS 2 distribution is Humble rather than the documented Jazzy target. These observations establish the current native/simulation blockers; they do not establish runtime readiness.
+The currently inspected host is Ubuntu 24.04.4 LTS x86-64 with Node.js 22.22.2, npm 10.9.7, rustc/cargo 1.94.1 and 4 logical CPUs on roughly 15 GiB RAM. The GTK/WebKit libraries listed below are installed here, so the desktop shell compiles, launches and passes its Phase 0 gate. Docker, Gazebo and ROS 2 are absent, so the simulation subsystem stays unprovisioned. These observations describe the desktop runtime only; they establish nothing about hardware or simulator readiness.
 
 An earlier snapshot of a Windows host recorded Node.js 24.16.0 and npm 12.0.2 with WebView2 present but no Rust or MSVC toolchain. That host is not the current environment; the Windows instructions below are retained as platform guidance, not as a description of this machine.
 
 From `drone-platform`:
 
 ```bash
-npm install
+npm install --include=dev
 npm run check:environment
-npm run check:foundation
 npm run dev
 ```
+
+Add `--include=dev` when your shell exports `NODE_ENV=production`, or npm silently omits the Tauri CLI, Vite and TypeScript.
 
 The browser preview is useful for the shell and unavailable-state UX. Native project persistence requires Tauri. Install the prerequisites for your OS, then run:
 
 ```bash
 npm run test:native
 npm run desktop:build
-npm run desktop:dev
+npm run check:foundation
 ```
+
+`check:foundation` finishes by launching the binary you just built, so build before you check.
 
 Windows requires the Rust MSVC toolchain, Visual Studio C++ build tools/Windows SDK, and WebView2. Use the environment report to identify missing components. Installers that need elevation are operator actions: DroneLab prints required commands and stops before a password prompt. No system installer is run by this migration.
 
@@ -53,7 +56,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --defaul
 . "$HOME/.cargo/env"
 ```
 
-The system libraries do require elevation, so they are an **operator action**. DroneLab prints the command and stops; it never runs a package installer itself. On Ubuntu 22.04:
+The system libraries do require elevation, so they are an **operator action**. DroneLab prints the command and stops; it never runs a package installer itself. On Ubuntu:
 
 ```bash
 sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev \
@@ -62,7 +65,23 @@ sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev \
 
 These package names follow [Tauri's Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux). Ubuntu 24.04 and later use the same set. Re-run `npm run check:environment` afterwards and confirm `nativeToolchainPresent` is `true` before attempting `npm run desktop:build`, then `npm run check:launch` to record the native launch evidence Phase 0 requires.
 
-Until the libraries are present, `npm run check:foundation` still runs the native suite through `cargo test --workspace --no-default-features`, which exercises storage, migrations and safety without the window layer. It reports the desktop shell as `BLOCKED` and exits non-zero, because Phase 0 requires a verified native launch that this host cannot yet produce.
+Until the libraries are present, `npm run check:foundation` still runs the native suite through `cargo test --workspace --no-default-features`, which exercises storage, migrations and safety without the window layer. It reports the desktop shell as `BLOCKED` and exits non-zero, because Phase 0 requires a verified native launch that such a host cannot produce.
+
+### Launch verification prerequisites
+
+`npm run check:launch` drives the running window over WebDriver, so it needs two more pieces. `tauri-driver` installs as an ordinary user and needs no elevation:
+
+```bash
+cargo install tauri-driver --locked
+```
+
+`WebKitWebDriver` ships with WebKitGTK, and a headless machine also needs a virtual display. Both are operator actions:
+
+```bash
+sudo apt install webkit2gtk-driver xvfb
+```
+
+The harness starts `Xvfb` itself when `DISPLAY` is unset, and uses the existing display otherwise. Verified against `tauri-driver` 2.0.6 and WebKitGTK 2.52.6 on Ubuntu 24.04.
 
 For the future Ubuntu simulation environment, first follow the official [ROS 2 Jazzy installation instructions](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html) and [Gazebo Harmonic Ubuntu instructions](https://gazebosim.org/docs/harmonic/install_ubuntu/). The [PX4 development environment](https://docs.px4.io/main/en/dev_setup/dev_env_linux_ubuntu) documents Ubuntu toolchain requirements. Upstream documentation was checked on 2026-09-09; recheck it when provisioning because releases and package instructions change.
 
