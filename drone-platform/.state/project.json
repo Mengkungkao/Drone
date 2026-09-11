@@ -1,6 +1,6 @@
 {
   "product": "DroneLab",
-  "phase": 0,
+  "phase": 1,
   "phase0_complete": true,
   "phase1_complete": false,
   "host": "Ubuntu 24.04.4 LTS x86-64, Node v22.22.2, npm 10.9.7, rustc 1.94.1, 4 logical CPUs, 15 GiB RAM",
@@ -14,6 +14,7 @@
   "sqlite_persistence_passed": true,
   "safety_latch_passed": true,
   "betaflight_adapter_ready": false,
+  "betaflight_msp_codec_ready": true,
   "betaflight_detection_passed": false,
   "px4_adapter_ready": false,
   "px4_sitl_passed": false,
@@ -28,9 +29,10 @@
   "bench_test_passed": false,
   "real_flight_module_ready": false,
   "blockers": [
+    "Phase 1 has only its protocol layer. MSP framing and identity decoding are implemented and unit tested, but no serial transport, device enumeration or controller verification exists, so nothing can be contacted and the Phase 1 gate is untouched.",
+    "No verified Betaflight controller has been supplied. The gate needs measured evidence from real hardware: verified board and firmware, a configuration read, live gyro displayed and the project saved.",
     "The operator path through the running window is driven by an automated WebDriver client, not a person. It shows a project, a snapshot and the safety latch survive a restart through the real interface; it is not a usability trial, and no human has repeated it by hand on this host.",
     "The verified launch ran on a virtual display. Rendering on a physical GPU, on Windows and on macOS is unverified.",
-    "No verified Betaflight controller has been supplied. Phase 1 needs real hardware; no device communication has been attempted.",
     "PX4 SITL, Gazebo and the documented ROS 2 Jazzy target are not provisioned on this host, so Phase 2 remains unstarted."
   ],
   "evidence": [
@@ -63,6 +65,11 @@
       "scope": "operator flow",
       "recorded": "logs/operator-2026-09-10T01-45-33-572Z/operator-flow.json",
       "result": "PASS 14/14. The release binary rendered its window and reported the native runtime. A project created through the dialog, its selection, a configuration snapshot and a latched emergency stop all reloaded after the application exited and was started again against the same data directory; the stop cleared only on an explicit action. Screenshots of both windows retained. Driven by an automated WebDriver client, not a person."
+    },
+    {
+      "scope": "Betaflight protocol layer",
+      "recorded": "apps/desktop/src-tauri/tests/msp.rs",
+      "result": "PASS 15/15 protocol tests against constructed frames: v1/v2 encode and checksums, reassembly across every split boundary, multiple frames per read, resynchronisation after a corrupt checksum, refusal of an oversized declared length and of an echoed request, rejection frames surfaced as answers, truncated payloads refused, and a non-Betaflight variant refused rather than reported as verified. No hardware was contacted; this is a codec test, not launch or hardware evidence."
     },
     {
       "scope": "simulator or physical measurements",

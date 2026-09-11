@@ -1,6 +1,8 @@
 # Betaflight integration
 
-Status: adapter boundary and capability description are part of the foundation. The real read-only hardware slice is not verified. No flight controller has been probed or opened by this migration.
+Status: the adapter boundary, capability description and the MSP protocol layer exist. `src-tauri/src/msp.rs` encodes the read-only requests this phase permits and decodes v1/v2 frames, the identity messages and `MSP_RAW_IMU`, with unit tests covering split reads, corrupt checksums, oversized frames, truncated payloads and an echoed request. No serial port is opened, no device is enumerated, and no controller has been contacted, so the Phase 1 gate is untouched.
+
+The codec exists to be given real bytes later; passing tests against constructed frames says the decoder follows the specification, not that any hardware answered.
 
 The Phase 1 sequence is: explicitly select and verify the FC, identify its board and firmware, read supported basic configuration, receive genuine gyro telemetry, display it, and save the selected DroneProject. All steps need logs and measured hardware evidence before the gate passes.
 
